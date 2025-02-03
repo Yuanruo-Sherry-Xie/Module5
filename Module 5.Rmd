@@ -1,0 +1,283 @@
+---
+title: "Module 5 Notes"
+output: html_document
+date: "2025-02-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading Different Types of Plain Text Files
+
+In ***R***, we can load a data set from a plain text file using the `read.table()` function from the {base} package, with the path to the file as the first (`file=`) argument for the function. An additional argument (`header=`) can be used to specify whether the first row of the data file consists of column/field names.
+
+The generic `read.table()` function can be used to read data files where columns are separated by tabs, commas, white space, or some other delimeter. The `sep=` argument tells ***R*** what character is used as a “separator” or delimiter. The `skip=` argument can be used to start reading a file after a set number of rows.
+
+There are format-specific variants of `read.table()` (e.g., `read.csv()`) that have different defaults and may be quicker for certain file types. Note that when using this function from the {base} package, the argument `stringsAsFactors` is set to be TRUE by default, and we need to set it as FALSE if we want character strings to be loaded as actual strings.
+
+Let’s read in one of the data sets that you have copied and stored locally: **CPDS-1960-2014-reduced.txt**.
+
+### Reading from a local file
+
+The `file.choose()` command is useful and gives you a familiar dialog box to select a file. You can use this to specify the path to a locally-stored file, which you will save as the ***R*** object called `f`.
+
+```{r}
+f <- file.choose()
+```
+
+The file paths below refer to where I have saved the downloaded data, on my **Desktop**. You will need to change this if you have saved your downloaded data to a different location.
+
+```{r}
+f <- "/Users/sherryxie/CODE/Github/repos/Module 5/Module5/Tables/CPDS-1960-2014-reduced.txt"
+d <- read.table(f, header = TRUE, sep = "\t", stringsAsFactors = FALSE, fill = T)
+head(d)  # lists the first 6 lines of data
+```
+
+**NOTE:** With bracket notation, you can modify how many lines the `head()` function will return: e.g., `head(d)[1:10])`
+
+```{r}
+tail(d)  # shows the last 6 lines of data
+```
+
+```{r}
+class(d)  # shows that tables are typically loaded as data frames
+```
+
+Or, alternatively…
+
+```{r}
+d <- read.delim(f, header = TRUE, stringsAsFactors = FALSE)
+head(d)
+```
+
+Loading comma-separated (`.csv`) text with {base} ***R*** functions
+
+```{r}
+f <- "/Users/sherryxie/CODE/Github/repos/Module 5/Module5/Tables/CPDS-1960-2014-reduced.csv"
+d <- read.table(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+```
+
+Or, alternatively…
+
+```{r}
+d <- read.csv(f, header = TRUE, stringsAsFactors = FALSE)
+head(d)
+```
+
+### Using the {readr} package
+
+The {readr} package provides alternative functions to read in delimited text files. It runs faster than the {base} package functions. It reads in an initial set of 1000 rows of the from the table to try to impute the data class for of each column. You can also specify the data class of each column with the `col_types()` function.
+
+```{r}
+require(readr)
+```
+
+```{r}
+f <- "/Users/sherryxie/CODE/Github/repos/Module 5/Module5/Tables/CPDS-1960-2014-reduced.txt"
+d <- read_tsv(f, col_names = TRUE)  # for tab-separated files
+```
+
+```{r}
+head(d)
+```
+
+```{r}
+class(d)
+```
+
+Or, alternatively…
+
+```{r}
+d <- read_delim(f, delim = "\t", col_names = TRUE)
+```
+
+```{r}
+head(d)
+
+```
+
+```{r}
+require(readr)
+f <- "/Users/sherryxie/CODE/Github/repos/Module 5/Module5/Tables/CPDS-1960-2014-reduced.csv"
+d <- read_csv(f, col_names = TRUE)  # for comma-separated files
+```
+
+```{r}
+head(d)
+```
+
+Or, alternatively…
+
+```{r}
+d <- read_delim(f, delim = ",", col_names = TRUE)
+```
+
+```{r}
+head(d)
+
+```
+
+## Loading ***Excel*** Files
+
+While you should never need to use ***Excel***, sometimes you will no doubt be given a spreadsheet file with some data in it that you want to analyze in ***R***. There are several packages available that provide functions for loading data into ***R*** from ***Excel*** spreadsheet files: {readxl}, {XLConnect}, {gdata}, and {xlsx}. The first two of these are fast, easy to use, and work well. {gdata} is a bit slower and requires that you have PERL installed someone on your computer (which it is likely to be by default). {xlsx} is much slower.
+
+**NOTE:** always use `str()` to check if your variables come in as the correct data class.
+
+### Using the {readxl} package
+
+```{r}
+require(readxl)
+```
+
+```{r}
+f <- "/Users/sherryxie/CODE/Github/repos/Module 5/Module5/Tables/CPDS-1960-2014-reduced.xlsx"
+d <- read_excel(f, sheet = 1, col_names = TRUE)
+head(d)
+```
+
+```{r}
+str(d)
+
+```
+
+### *Using the {XLConnect} package*
+
+```{r}
+require(devtools)
+
+# Installs the master branch of XLConnect (= current development version)
+install_github("miraisolutions/xlconnect")
+
+# Installs XLConnect with the given version, e.g. 1.0.2
+install_github("miraisolutions/xlconnect", ref = "<version>"
+```
+
+```{r}
+install.packages("XLConnect")
+require(XLConnect)
+f <- "/Users/sherryxie/CODE/Github/repos/Module 5/Module5/Tables/CPDS-1960-2014-reduced.xlsx"
+d <- readWorksheetFromFile(f, sheet = 1, header = TRUE)
+head(d)
+str(d)
+
+```
+
+The {XLConnect} package can also write data frames back out to ***Excel*** worksheets. If the file does not exist, it is created. If it does exist, data is cleared and overwritten. The second process is MUCH slower. I have included a conditional statement (`if(){}`) which will implement the `file.remove()` command here, if needed.
+
+```{r}
+f <- "/Users/sherryxie/CODE/Github/repos/Module 5/Module5/Tables/output.xlsx"
+if (file.exists(f)) {
+    file.remove(f)
+}
+writeWorksheetToFile(f, d, sheet = "myData", clearSheets = TRUE)
+
+```
+
+## Loading Files Stored on a Remote Server
+
+### Importing data from a file on a remote server using {curl}
+
+```{r}
+library(curl)
+```
+
+```{r}
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Spring25/CPDS-1960-2014-reduced.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+
+# returns a data frame
+
+```
+
+For a tab-delimited (`.tsv` or `txt`) text file…
+
+```{r}
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/CPDS-1960-2014-reduced.txt")
+d <- read.table(f, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+head(d)
+
+# returns a data frame
+
+```
+
+## Importing data from a file on a remote server using {readr}
+
+```{r}
+Sys.setenv(VROOM_CONNECTION_SIZE = 131072 * 2)
+library(readr)
+f <- "https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/CPDS-1960-2014-reduced.csv"
+d <- read_csv(f, col_names = TRUE)
+
+```
+
+```{r}
+head(d)
+
+# returns a 'tibble', a new version of a data frame
+
+```
+
+```{r}
+f <- "https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/CPDS-1960-2014-reduced.txt"
+d <- read_tsv(f, col_names = TRUE)
+```
+
+```{r}
+head(d)
+
+# returns a 'tibble', a new version of a data frame for use in the
+# {tidyverse}
+```
+
+## Importing data from a file hosted on ***Dropbox***
+
+Unfortunately, now that ***Dropbox*** is restricting API access to their servers, it’s become difficult to work with files archived on a ***Dropbox*** account in the ***RStudio*** framework. The package we would usually use for this, [{rdrop2}](https://fuzzyatelin.github.io/bioanth-stats/module-05/(https://github.com/karthik/rdrop2)), has already been archived on CRAN, in part because of this and because the maintainers have given it up (as of late 2024). However, we can still install the development version, and it will work (for now!) on the most recent version of ***R*** (4.4.2) as of January 2025:
+
+```{r}
+devtools::install_github("karthik/rdrop2")
+
+```
+
+**NOTE:** The following code block cannot be “knit” to show you the output because it requires an interactive ***R*** environment for `drop_auth()`, `drop_search()`, etc. Also, with two-factor authentication protocols (like Duo for BU accounts), there are likely a number of cumbersome logins/authentications you need to enter to accomplish this!
+
+```{r}
+require(rdrop2)
+drop_auth()  # opens a browser dialog box to ask for authorization...
+drop_dir()  # lists the contents of your dropbox folder
+f <- "CPDS-1960-2014-reduced.csv"  # name of the file to read from
+f <- drop_search(f)  # searches your dropbox directory for file or directory names; this can be slow
+f <- f$path  # f$path is the location you choose from the results returned above
+d <- drop_read_csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+str(d)
+```
+
+This same process can be done to load data from other types of delimited files in ***Dropbox*** by setting the appropriate `sep=` argument.
+
+You can also read text files from someone else’s ***Dropbox*** account using a link that they have shared with you. Here’s a link sharing the same file from my BU dropbox:
+
+```{r}
+link <- "https://www.dropbox.com/scl/fi/560bh55pwv3sowbmyygsl/CPDS-1960-2014-reduced.csv?rlkey=sp4xkouegbno3fqrt65o7gb4d&dl=0"
+
+```
+
+**NOTE:** Shared ***Dropbox*** links like this one will take you to a webpage that has the data embedded… to get the raw data you need to change the end of the link from **dl=0** to **dl=1** or **raw=1**. That’s what the next line of code does:
+
+```{r}
+link <- gsub(pattern = "dl=0", replacement = "dl=1", x = link)
+d <- read.csv(link, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+str(d)
+```
+
+```{r}
+require(repmis)
+
+```
+
+## Downloading Files from a Remote Server
+
+## Downloading Files from Other Statistical Programs
